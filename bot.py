@@ -1,6 +1,7 @@
 from aiogram import Bot, Dispatcher, executor, types
 from scheduleModule import getSchedule
 from configparser import ConfigParser
+#from background import keep_alive
 from datetime import datetime
 from database import dbWorker
 import logging
@@ -15,6 +16,8 @@ token = config['Telegram']['token']
 namedbFile = config['Data']['namedbFile']
 nameJsonFile = config['Data']['nameJsonFile']
 defaultNameNeedGroup = config['Data']['defaultNameNeedGroup']
+blacklistSymbs = config['Data']['blacklistSymbs'].split()
+IDMIHAIL = 1419885227
 db = dbWorker(namedbFile)
 jsonFile = open(nameJsonFile, encoding='utf-8')
 langJson = json.load(jsonFile)
@@ -40,9 +43,7 @@ def checkPermissions(chatId, userId, admins):
     if chatId == userId: return True
     for admin in admins:
         if userId == admin.user.id:
-            print('TRUE')
             return True
-    print('FALSE')
     return False
 
 
@@ -61,6 +62,28 @@ def getUserInfo(message): return [message.chat.id,
                                   message.message_id,
                                   message.text]
 
+def checkTextOnBlacklistSymbs(chatId, userId, admins, userText):
+    if not checkPermissions(chatId, userId, admins):
+        for symb in userText:
+            if symb in blacklistSymbs:
+                return True
+    return False
+
+def getResultTasks(chatId):
+    tasks = getSchedule()
+    group = tasks[db.getGroup(chatId)]
+    resultText = f"_{getTranslation('schedule.message', [db.getGroup(chatId)])}_\n"
+    for task in group:
+        title = task['title']
+        address = task['address']
+        startTime = task['startTime']
+        endTime = task['endTime']
+        startAdd = '0' if len(str(startTime % 60)) == 1 else ''
+        endAdd = '0' if len(str(endTime % 60)) == 1 else ''
+        resultText += f'*{title}*\n'
+        resultText += f'{startTime // 60}:{startAdd}{startTime % 60} — {endTime // 60}:{endAdd}{endTime % 60}\n'
+        resultText += f'Место: {address}\n\n'
+    return resultText
 
 # COMMANDS
 @dp.message_handler(commands=['start', 'about'])
@@ -146,35 +169,36 @@ async def gettimeHandler(message: types.Message):
         timeNow = nowTime.strftime("%H:%M:%S")
         await message.answer(f'Host time: {timeNow}')
 
-
-#МУТ МИХАИЛА
-'''
 @dp.message_handler()
 async def mainHandler(message: types.Message):
     chatId, userId, userName, userFullName, messageId, userText = getUserInfo(message)
-    if (userId == 1419885227 and len(userText) < 3) or (userId == 1419885227 and random.randint(1, 100) < 90):
+    if chatId != userId:
+        admins = await bot.get_chat_administrators(chat_id=chatId)
+    else:
+        admins = None
+    if checkTextOnBlacklistSymbs(chatId, userId, admins, userText):
         await bot.delete_message(chatId, messageId)
         msg = await bot.send_message(chatId, ')')
-        await asyncio.sleep(5)
-        await bot.delete_message(chatId, msg.message_id)'''
+        await asyncio.sleep(3)
+        await bot.delete_message(chatId, msg.message_id)
 
+@dp.message_handler(content_types='sticker')
+async def detectstickersHandler(message: types.Message):
+    chatId, userId, userName, userFullName, messageId, userText = getUserInfo(message)
+    if userId == IDMIHAIL:
+        await bot.delete_message(chatId, messageId)
+        msg = await bot.send_message(chatId, ')')
+        await asyncio.sleep(3)
+        await bot.delete_message(chatId, msg.message_id)
 
-def getResultTasks(chatId):
-    tasks = getSchedule()
-    group = tasks[db.getGroup(chatId)]
-    resultText = f"_{getTranslation('schedule.message', [db.getGroup(chatId)])}_\n"
-    for task in group:
-        title = task['title']
-        address = task['address']
-        startTime = task['startTime']
-        endTime = task['endTime']
-        startAdd = '0' if len(str(startTime % 60)) == 1 else ''
-        endAdd = '0' if len(str(endTime % 60)) == 1 else ''
-        resultText += f'*{title}*\n'
-        resultText += f'{startTime // 60}:{startAdd}{startTime % 60} — {endTime // 60}:{endAdd}{endTime % 60}\n'
-        resultText += f'Место: {address}\n\n'
-    return resultText
-
+@dp.message_handler(content_types='animation')
+async def detectGIFsHandler(message: types.Message):
+    chatId, userId, userName, userFullName, messageId, userText = getUserInfo(message)
+    if userId == IDMIHAIL:
+        await bot.delete_message(chatId, messageId)
+        msg = await bot.send_message(chatId, ')')
+        await asyncio.sleep(3)
+        await bot.delete_message(chatId, msg.message_id)
 
 async def activeLoop():
     global data
@@ -207,4 +231,5 @@ def main():
 
 
 if __name__ == '__main__':
+    #keep_alive()
     main()
