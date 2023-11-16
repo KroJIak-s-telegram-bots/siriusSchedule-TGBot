@@ -1,0 +1,25 @@
+{
+  "start.message": "OHai, %{}%! Ai - teh bot, sendin' yooz teh groupz skedz in Sirius fer teh preZZent time",
+
+  "schedule.message": "Skedz fer group %{}% fur teh day iz liek dis:",
+  "schedule.error": "Noe wurriz, mai pal! It lookz liek teh group %{}% iz a no-show in teh app((",
+
+  "button.schedule": "GIMME DAT SKED, NOW! \uD83D\uDCDD",
+  "button.setgroup": "Group NAYM (%{}%)",
+  "button.settime": "Time fer teh wake-UP (%{}%:%{}%)",
+  "button.on": "Flickin' on alerts, yay! ✅",
+  "button.off": "Killin' dem pings... (sob) ❌",
+  "button.changelang": "%{}% NO MEOW %{}%",
+
+  "mention.on": "Notifz purrfectly active! Yay!",
+  "mention.off": "Notifz hushed... (sigh)",
+
+  "lang.countryflag": "\uD83D\uDE39",
+  "lang.change": "HELO MY CAT",
+
+  "setgroup.select": "Pikz a groop NAYM in Sirius, pls:",
+  "setgroup.true": "Groop NAYM locked 'n loaded, achievement unlocked!",
+
+  "settime.select": "Pikz teh time fer notifz 'bout skedz, plz:",
+  "settime.true": "Teh notifz time iz all set! Success purr!"
+}
