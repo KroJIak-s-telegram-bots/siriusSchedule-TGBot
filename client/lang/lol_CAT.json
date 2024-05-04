@@ -1,0 +1,21 @@
+{
+  "lang.countryflag": "\uD83D\uDE39",
+  "lang.change": "HELO MY CAT",
+
+  "start.message": "OHai, %{}%! Ai - teh bot, sendin' yooz teh groupz skedz in Sirius fer teh preZZent time",
+  "success.message": "Teh operation wuz complet'd sucesfaly, meow!",
+  "error.message": "<b>[erar]:</b> <span class=\"tg-spoiler\">%{}%</span>",
+  "unknown.command.message": "Whut iz dis? Some kinda gibberish comand?",
+
+  "permissions.cancel": "well well well...",
+
+  "schedule.message": "Skedz fer group %{}% fur teh day iz liek dis:",
+  "schedule.error": "Noe wurriz, mai pal! It lookz liek teh group iz a no-show in teh app((",
+
+  "setgroup.select": "Pikz a groop NAYM in Sirius, pls:",
+  "setgroup.done": "Groop NAYM locked 'n loaded, achievement unlocked!",
+
+  "button.schedule": "GIMME DAT SKED, NOW! \uD83D\uDCDD",
+  "button.setgroup": "Group NAYM (%{}%)",
+  "button.changelang": "%{}% NO MEOW %{}%"
+}

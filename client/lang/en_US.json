@@ -1,0 +1,21 @@
+{
+  "lang.countryflag": "\uD83C\uDDFA\uD83C\uDDF8",
+  "lang.change": "The language has been successfully changed!",
+
+  "start.message": "Hello, %{}%! I am a bot that sends the group's schedule in Sirius for the current day.",
+  "success.message": "The operation was completed successfully.",
+  "error.message": "<b>[Error]:</b> <span class=\"tg-spoiler\">%{}%</span>",
+  "unknown.command.message": "Unknown command.",
+
+  "permissions.cancel": "well well well...",
+
+  "schedule.message": "Group schedule %{}% for today:",
+  "schedule.error": "The group doesn't exist in the app.",
+
+  "setgroup.select": "Choose the name of the group in Sirius:",
+  "setgroup.done": "The name of the group has been successfully established!",
+
+  "button.schedule": "Get schedule \uD83D\uDCDD",
+  "button.setgroup": "Group name (%{}%)",
+  "button.changelang": "%{}% Change language %{}%"
+}
