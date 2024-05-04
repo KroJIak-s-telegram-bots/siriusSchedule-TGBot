@@ -43,7 +43,7 @@ goodWords = ['хороший', 'прекрасный', "отличный", 'уд
 
 
 '''
-def getUrlImgWithCat():
+        def getUrlImgWithCat():  
     response = requests.get(urlRandomCat)
     bs = BeautifulSoup(response.text, 'lxml')
     imgObjects = bs.find_all('img')
