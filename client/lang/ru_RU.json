@@ -8,6 +8,7 @@
   "unknown.command.message": "Неизвестная команда.",
 
   "permissions.cancel": "well well well...",
+  "permissions.group.admin": "Отказано в доступе. Вы не являетесь админом группы.",
 
   "schedule.message": "Расписание группы %{}% на сегодня:",
   "schedule.error": "Данная группа не существует в приложении.",

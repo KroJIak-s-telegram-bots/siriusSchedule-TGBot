@@ -4,9 +4,12 @@ import shutil
 
 from utils.funcs import joinPath
 from modules.objects.db import Chat, User
+from utils.const import ConstPlenty
+
+const = ConstPlenty()
 
 class dbWorker():
-    def __init__(self, databasePath, defaultDBFileName='default.json'):
+    def __init__(self, databasePath, defaultDBFileName=const.default.file.database):
         folderPath = databasePath.split('/')
         self.fileName = folderPath.pop(-1)
         self.folderPath = '/'.join(folderPath)
@@ -56,7 +59,20 @@ class dbLocalChatsWorker():
         return str(chatId) in self.db
 
     def addNewChat(self, chatId):
-        self.db[str(chatId)] = dict()
+        self.db[str(chatId)] = dict(lastBotMessageId=None,
+                                    lastBotStartMessageId=None)
+
+    def setLastBotMessageId(self, chatId, messageId):
+        self.db[str(chatId)]['lastBotMessageId'] = messageId
+
+    def getLastBotMessageId(self, chatId):
+        return self.db[str(chatId)]['lastBotMessageId']
+
+    def setLastBotStartMessageId(self, chatId, messageId):
+        self.db[str(chatId)]['lastBotStartMessageId'] = messageId
+
+    def getLastBotStartMessageId(self, chatId):
+        return self.db[str(chatId)]['lastBotStartMessageId']
 
 class dbUsersWorker(dbWorker):
     def getUserIds(self):

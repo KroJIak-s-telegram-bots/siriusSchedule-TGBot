@@ -13,6 +13,7 @@ class Telegram(configCategoryObject):
         super().__init__(config, 'Telegram')
         self.token = self.get('token')
         self.alias = self.get('alias')
+        self.messageTimeout = int(self.get('messageTimeout'))
 
 class Data(configCategoryObject):
     def __init__(self, config):
@@ -37,11 +38,15 @@ class Path():
         self.lang = joinPath(self.client, 'lang')
         self.logs = joinPath(self.client, 'logs')
 
+class File():
+    def __init__(self):
+        self.config = 'bot.ini'
+        self.database = 'default.json'
+
 class Default():
     def __init__(self):
         self.parseMode = 'HTML'
-        self.configFile = 'bot.ini'
-        self.timezoneName = 'Europe/Moscow'
+        self.file = File()
 
 class Schedule():
     def __init__(self):
@@ -54,10 +59,12 @@ class Cats():
 class Prefix():
     def __init__(self):
         self.setGroup = 'sg.'
+        self.mainMenu = 'main.'
 
 class Callback():
     def __init__(self):
         self.prefix = Prefix()
+        self.textLimit = 20
 
 class ConstPlenty():
     def __init__(self, config=None):

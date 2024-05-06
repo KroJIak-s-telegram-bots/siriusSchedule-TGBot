@@ -5,6 +5,8 @@ from datetime import datetime, timedelta
 
 import asyncio
 from aiogram import Bot, Dispatcher, types, F
+from aiogram.types.chat_member_administrator import ChatMemberAdministrator
+from aiogram.filters import Filter
 from aiogram.filters.command import Command
 from aiogram.client.default import DefaultBotProperties
 from aiogram.utils.keyboard import InlineKeyboardMarkup
@@ -19,10 +21,10 @@ from db.database import dbUsersWorker, dbChatsWorker, dbLocalWorker
 
 # SETTINGS
 const = ConstPlenty()
-botConfig = getConfigObject(joinPath(const.path.config, const.default.configFile))
+botConfig = getConfigObject(joinPath(const.path.config, const.default.file.config))
 const.addConstFromConfig(botConfig)
-logging.basicConfig(level=logging.INFO)
-# logging.basicConfig(level=logging.INFO, filename=joinPath(const.path.logs, getLogFileName()), filemode='w', format=const.logging.format)
+# logging.basicConfig(level=logging.INFO)
+logging.basicConfig(level=logging.INFO, filename=joinPath(const.path.logs, getLogFileName()), filemode='w', format=const.logging.format)
 dbUsers = dbUsersWorker(joinPath(const.path.db, const.data.usersDatabasePath))
 dbChats = dbChatsWorker(joinPath(const.path.db, const.data.chatsDatabasePath))
 dbLocal = dbLocalWorker()
@@ -58,7 +60,7 @@ def getUserInfo(message):
         dbLocal.chats.addNewChat(userInfo.chatId)
     userLogInfo = f'{userInfo} | {str(dbLocal.users.db[str(userInfo.userId)])}'
     logging.info(userLogInfo)
-    # print(userLogInfo)
+    print(userLogInfo)
     return userInfo
 
 def getChangeLangTranslation(userInfo):
@@ -79,13 +81,32 @@ def getMainKeyboard(userInfo):
     mainKeyboard = types.ReplyKeyboardMarkup(keyboard=mainButtons, resize_keyboard=True)
     return mainKeyboard
 
+def getUserNameWithUrl(userInfo):
+    return f'<a href="tg://user?id={userInfo.userId}">{userInfo.userFirstName}</a>'
+
+async def isGroupAdmin(userInfo):
+    if userInfo.chatId == userInfo.userId: return True
+    chatMember = await bot.get_chat_member(userInfo.chatId, userInfo.userId)
+    return chatMember.status == ChatMemberAdministrator
+
+async def notGroupAdminHandler(userInfo, message):
+    botMessage = await message.answer(getTranslation(userInfo, 'permissions.group.admin'))
+    await bot.delete_message(userInfo.chatId, userInfo.messageId)
+    await asyncio.sleep(const.telegram.messageTimeout)
+    await bot.delete_message(userInfo.chatId, botMessage.message_id)
+
 # COMMANDS
 @dp.message(Command('start'))
 async def startHandler(message: types.Message):
     userInfo = getUserInfo(message)
     dbLocal.users.setMode(userInfo.userId, 0)
+    lastBotStartMessageId = dbLocal.chats.getLastBotStartMessageId(userInfo.chatId)
+    if lastBotStartMessageId is not None: await bot.delete_message(userInfo.chatId, lastBotStartMessageId)
     mainKeyboard = getMainKeyboard(userInfo)
-    await message.answer(getTranslation(userInfo, 'start.message', [userInfo.userFirstName]), reply_markup=mainKeyboard)
+    userNameWithUrl = getUserNameWithUrl(userInfo)
+    botMessage = await message.answer(getTranslation(userInfo, 'start.message', [userNameWithUrl]), reply_markup=mainKeyboard)
+    await bot.delete_message(userInfo.chatId, userInfo.messageId)
+    dbLocal.chats.setLastBotStartMessageId(userInfo.chatId, botMessage.message_id)
 
 def getNormalTime(milliseconds):
     dtObject = datetime.fromtimestamp(milliseconds / 1000)
@@ -111,23 +132,44 @@ def getResultTextWithSchedule(userInfo, group):
     resultText += ''.join(sortedEventTextList)
     return resultText
 
+class pinFilter(Filter):
+    async def __call__(self, message: types.Message) -> bool:
+        return message.pinned_message is not None
+
+@dp.message(pinFilter())
+async def pinnedMessageHandler(message: types.Message):
+    userInfo = getUserInfo(message)
+    user = dbUsers.getUser(userInfo.userId)
+    if user.login == const.telegram.alias:
+        await bot.delete_message(userInfo.chatId, userInfo.messageId)
+
 def isScheduleCommand(userInfo):
     return userInfo.userText in ['/schedule', f'/schedule@{const.telegram.alias}',
                                  getTranslation(userInfo, 'button.schedule')]
 
 async def scheduleHandler(userInfo, message):
     chat = dbChats.getChat(userInfo.chatId)
-    mainKeyboard = getMainKeyboard(userInfo)
     if chat.groupName is None:
-        await message.answer(getTranslation(userInfo, 'schedule.error'), reply_markup=mainKeyboard)
-        return
-    group = scheduler.getGroupByName(chat.groupName)
-    resultText = getResultTextWithSchedule(userInfo, group)
-    botMessage = await message.answer(resultText, reply_markup=mainKeyboard)
-    await bot.pin_chat_message(userInfo.chatId, botMessage.message_id)
+        botMessage = await message.answer(getTranslation(userInfo, 'schedule.error'))
+        await asyncio.sleep(const.telegram.messageTimeout)
+        await bot.delete_message(userInfo.chatId, botMessage.message_id)
+    else:
+        group = scheduler.getGroupByName(chat.groupName)
+        resultText = getResultTextWithSchedule(userInfo, group)
+        botMessage = await message.answer(resultText)
+        await bot.pin_chat_message(userInfo.chatId, botMessage.message_id)
+    await bot.delete_message(userInfo.chatId, userInfo.messageId)
+
+def getShortenGroupName(name):
+    limit = const.callback.textLimit
+    if len(name) <= limit:
+        return name
+    resultName = name[  :(limit // 2 - 1)] + '...' + name[-(limit // 2 + 2):]
+    return resultName
 
 def getGroupNamesInlineKeyboard():
     groupNames = scheduler.getGroupNames()
+    groupNames = tuple(list(map(getShortenGroupName, groupNames)))
     callbackPrefix = const.callback.prefix.setGroup
     inlineButtons = [[types.InlineKeyboardButton(text=name, callback_data=callbackPrefix + name)]
                      for name in groupNames]
@@ -140,40 +182,62 @@ def isSetGroupCommand(userInfo):
                                  getTranslation(userInfo, 'button.setgroup', [chat.groupName])]
 
 async def setGroupHandler(userInfo, message):
+    if not await isGroupAdmin(userInfo):
+        await notGroupAdminHandler(userInfo, message)
+        return
+    lastBotMessageId = dbLocal.chats.getLastBotMessageId(userInfo.chatId)
+    if lastBotMessageId is not None: await bot.delete_message(userInfo.chatId, lastBotMessageId)
     inlineKeyboard = getGroupNamesInlineKeyboard()
-    await message.answer(getTranslation(userInfo, 'setgroup.select'), reply_markup=inlineKeyboard)
+    botMessage = await message.answer(getTranslation(userInfo, 'setgroup.select'), reply_markup=inlineKeyboard)
+    dbLocal.chats.setLastBotMessageId(userInfo.chatId, botMessage.message_id)
+    await bot.delete_message(userInfo.chatId, userInfo.messageId)
+    lastBotStartMessageId = dbLocal.chats.getLastBotStartMessageId(userInfo.chatId)
+    mainKeyboard = getMainKeyboard(userInfo)
+    await bot.edit_message_reply_markup(userInfo.chatId, lastBotStartMessageId, reply_markup=mainKeyboard)
 
-@dp.callback_query(F.data.startswith("sg."))
+@dp.callback_query(F.data.startswith(const.callback.prefix.setGroup))
 async def setGroupCallback(callback: types.CallbackQuery):
-    fakeMessage = FakeMessage(callback.message.chat.id, callback.from_user.id)
-    userInfo = UserInfo(fakeMessage)
     chatId = callback.message.chat.id
+    userId = callback.from_user.id
     callbackAction = callback.data
+    fakeMessage = FakeMessage(chatId, userId)
+    userInfo = getUserInfo(fakeMessage)
     newGroupName = callbackAction.split('.')[1]
     dbChats.setGroupName(chatId, newGroupName)
-    mainKeyboard = getMainKeyboard(userInfo)
-    await callback.message.answer(getTranslation(userInfo, 'setgroup.done'), reply_markup=mainKeyboard)
+    lastBotMessageId = dbLocal.chats.getLastBotMessageId(chatId)
+    botMessage = await callback.message.answer(getTranslation(userInfo, 'setgroup.done'))
+    await bot.delete_message(chatId, lastBotMessageId)
+    await asyncio.sleep(const.telegram.messageTimeout)
+    await bot.delete_message(chatId, botMessage.message_id)
+    dbLocal.chats.setLastBotMessageId(chatId, None)
 
 def isChangeLangCommand(userInfo):
     return userInfo.userText in ['/changelang', f'/changelang@{const.telegram.alias}',
                                  getChangeLangTranslation(userInfo)]
 
-
 async def changeLangHandler(userInfo, message):
+    if not await isGroupAdmin(userInfo):
+        await notGroupAdminHandler(userInfo, message)
+        return
     chat = dbChats.getChat(userInfo.chatId)
     availableLangs = const.data.availableLangs
     nextIndexLang = (availableLangs.index(chat.lang) + 1) % len(availableLangs)
     dbChats.setLang(userInfo.chatId, availableLangs[nextIndexLang])
+    botMessage = await message.answer(getTranslation(userInfo, 'lang.change'))
+    await bot.delete_message(userInfo.chatId, userInfo.messageId)
+    await asyncio.sleep(const.telegram.messageTimeout)
+    await bot.delete_message(userInfo.chatId, botMessage.message_id)
+    lastBotStartMessageId = dbLocal.chats.getLastBotStartMessageId(userInfo.chatId)
     mainKeyboard = getMainKeyboard(userInfo)
-    await message.answer(getTranslation(userInfo, 'lang.change'), reply_markup=mainKeyboard)
-
+    await bot.edit_message_reply_markup(userInfo.chatId, lastBotStartMessageId, reply_markup=mainKeyboard)
 
 def isUnknownCommand(userInfo):
     return userInfo.userText and userInfo.userText[0] == '/'
 
 async def unknownCommandHandler(userInfo, message):
-    mainKeyboard = getMainKeyboard(userInfo)
-    await message.answer(getTranslation(userInfo, 'unknown.command.message'), reply_markup=mainKeyboard)
+    botMessage = await message.answer(getTranslation(userInfo, 'unknown.command.message'))
+    await asyncio.sleep(const.telegram.messageTimeout)
+    await bot.delete_message(userInfo.chatId, botMessage.message_id)
 
 @dp.message()
 async def mainHandler(message: types.Message):
@@ -193,7 +257,7 @@ async def mainHandler(message: types.Message):
         return
 
     elif isUnknownCommand(userInfo):
-        await message.answer(getTranslation(userInfo, 'unknown.command.message'))
+        await unknownCommandHandler(userInfo, message)
         return
 
     elif userMode > 0:
