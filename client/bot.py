@@ -161,10 +161,12 @@ async def pinnedMessageHandler(message: types.Message):
 async def mainMenuCallback(callback: types.CallbackQuery):
     chatId = callback.message.chat.id
     userId = callback.from_user.id
+    username = callback.from_user.username
     userFirstName = callback.from_user.first_name
+    userFullName = callback.from_user.full_name
     callbackAction = callback.data
     menuId = int(callbackAction.split('.')[1])
-    fakeMessage = FakeMessage(chatId=chatId, userId=userId, userFirstName=userFirstName)
+    fakeMessage = FakeMessage(chatId, userId, username, userFirstName, userFullName)
     userInfo = getUserInfo(fakeMessage)
     match menuId:
         case 0: await scheduleHandler(userInfo)
@@ -206,8 +208,11 @@ async def setGroupHandler(userInfo):
 async def setGroupCallback(callback: types.CallbackQuery):
     chatId = callback.message.chat.id
     userId = callback.from_user.id
+    username = callback.from_user.username
+    userFirstName = callback.from_user.first_name
+    userFullName = callback.from_user.full_name
     callbackAction = callback.data
-    fakeMessage = FakeMessage(chatId=chatId, userId=userId)
+    fakeMessage = FakeMessage(chatId, userId, username, userFirstName, userFullName)
     userInfo = getUserInfo(fakeMessage)
     newGroupNameId = int(callbackAction.split('.')[1])
     groupNames = scheduler.getGroupNames()
