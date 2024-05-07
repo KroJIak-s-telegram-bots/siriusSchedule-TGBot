@@ -240,7 +240,8 @@ async def sendAllHandler(message: types.Message):
     allChatIds = dbChats.getChatIds()
     for chatId in allChatIds:
         if str(chatId) == str(const.telegram.ownerUserId): continue
-        await bot.send_message(chatId, ownerAdvertisement)
+        try: await bot.send_message(chatId, ownerAdvertisement)
+        except: print(str(chatId))
 
 def isUnknownCommand(userInfo):
     return userInfo.userText and userInfo.userText[0] == '/'
