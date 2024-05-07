@@ -7,7 +7,7 @@
   "unknown.command.message": "Unknown command.",
 
   "permissions.cancel": "well well well...",
-  "permissions.group.admin": "Access is denied. You are not the admin of the group.",
+  "permissions.group.admin": "Access is denied. You, %{}%, are not the admin of the group.",
 
   "schedule.message": "Group schedule %{}% for today:",
   "schedule.error": "The group doesn't exist in the app.",

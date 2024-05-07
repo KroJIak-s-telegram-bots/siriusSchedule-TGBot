@@ -7,7 +7,7 @@
   "unknown.command.message": "Whut iz dis? Some kinda gibberish comand?",
 
   "permissions.cancel": "wEl wEl wEl...",
-  "permissions.group.admin": "AceS deniet, punk! Ya ain't no ADMIN 'round her!",
+  "permissions.group.admin": "AceS deniet, punk! Ya, %{}%, ain't no ADMIN 'round her!",
 
   "schedule.message": "Skedz fer group %{}% fur teh day iz liek dis:",
   "schedule.error": "Noe wurriz, mai pal! It lookz liek teh group iz a no-show in teh app((",

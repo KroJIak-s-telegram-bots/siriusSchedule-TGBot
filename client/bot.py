@@ -5,7 +5,6 @@ from datetime import datetime, timedelta
 
 import asyncio
 from aiogram import Bot, Dispatcher, types, F
-from aiogram.types.chat_member_administrator import ChatMemberAdministrator
 from aiogram.filters import Filter
 from aiogram.filters.command import Command
 from aiogram.client.default import DefaultBotProperties
@@ -64,6 +63,7 @@ def getUserInfo(message):
     return userInfo
 
 def getShortenGroupName(name):
+    if name is None: return None
     limit = const.callback.textLimit
     if len(name) <= limit:
         return name
@@ -101,11 +101,11 @@ def getUserNameWithUrl(userInfo):
 async def isGroupAdmin(userInfo):
     if userInfo.chatId == userInfo.userId: return True
     chatMember = await bot.get_chat_member(userInfo.chatId, userInfo.userId)
-    return chatMember.status == ChatMemberAdministrator
+    return 'MEMBER' not in str(chatMember.status)
 
 async def notGroupAdminHandler(userInfo):
-    botMessage = await bot.send_message(userInfo.chatId, getTranslation(userInfo, 'permissions.group.admin'))
-    await bot.delete_message(userInfo.chatId, userInfo.messageId)
+    userNameWithUrl = getUserNameWithUrl(userInfo)
+    botMessage = await bot.send_message(userInfo.chatId, getTranslation(userInfo, 'permissions.group.admin', [userNameWithUrl]))
     await asyncio.sleep(const.telegram.messageTimeout)
     await bot.delete_message(userInfo.chatId, botMessage.message_id)
 
