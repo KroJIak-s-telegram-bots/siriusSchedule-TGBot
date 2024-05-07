@@ -14,6 +14,7 @@ class Telegram(configCategoryObject):
         self.token = self.get('token')
         self.alias = self.get('alias')
         self.messageTimeout = int(self.get('messageTimeout'))
+        self.ownerUserId = self.get('ownerUserId')
 
 class Data(configCategoryObject):
     def __init__(self, config):
@@ -64,7 +65,7 @@ class Prefix():
 class Callback():
     def __init__(self):
         self.prefix = Prefix()
-        self.textLimit = 20
+        self.textLimit = 15
 
 class ConstPlenty():
     def __init__(self, config=None):

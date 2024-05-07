@@ -1,6 +1,5 @@
 {
   "lang.countryflag": "\uD83C\uDDFA\uD83C\uDDF8",
-  "lang.change": "The language has been successfully changed!",
 
   "start.message": "Hello, %{}%! I am a bot that sends the group's schedule in Sirius for the current day.",
   "success.message": "The operation was completed successfully.",
