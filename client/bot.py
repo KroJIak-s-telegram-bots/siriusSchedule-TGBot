@@ -133,7 +133,7 @@ def getResultTextWithSchedule(userInfo, group):
     resultText += '\n'
     eventTextList = []
     for event in group.events:
-        currentTime = datetime.now()
+        currentTime = datetime.now() + timedelta(hours=const.data.timeDifference)
         newStartTime = getNormalTime(event.startTime)
         newEndTime = getNormalTime(event.endTime)
         eventText = f'<b>{event.title}</b>\n'
@@ -161,9 +161,10 @@ async def pinnedMessageHandler(message: types.Message):
 async def mainMenuCallback(callback: types.CallbackQuery):
     chatId = callback.message.chat.id
     userId = callback.from_user.id
+    userFirstName = callback.from_user.first_name
     callbackAction = callback.data
     menuId = int(callbackAction.split('.')[1])
-    fakeMessage = FakeMessage(chatId, userId)
+    fakeMessage = FakeMessage(chatId=chatId, userId=userId, userFirstName=userFirstName)
     userInfo = getUserInfo(fakeMessage)
     match menuId:
         case 0: await scheduleHandler(userInfo)
@@ -206,7 +207,7 @@ async def setGroupCallback(callback: types.CallbackQuery):
     chatId = callback.message.chat.id
     userId = callback.from_user.id
     callbackAction = callback.data
-    fakeMessage = FakeMessage(chatId, userId)
+    fakeMessage = FakeMessage(chatId=chatId, userId=userId)
     userInfo = getUserInfo(fakeMessage)
     newGroupNameId = int(callbackAction.split('.')[1])
     groupNames = scheduler.getGroupNames()
@@ -228,7 +229,9 @@ async def changeLangHandler(userInfo):
     dbChats.setLang(userInfo.chatId, availableLangs[nextIndexLang])
     lastBotStartMessageId = dbLocal.chats.getLastBotStartMessageId(userInfo.chatId)
     mainKeyboard = getMainKeyboard(userInfo)
-    await bot.edit_message_reply_markup(userInfo.chatId, lastBotStartMessageId, reply_markup=mainKeyboard)
+    userNameWithUrl = getUserNameWithUrl(userInfo)
+    await bot.edit_message_text(getTranslation(userInfo, 'start.message', [userNameWithUrl]),
+                                userInfo.chatId, lastBotStartMessageId, reply_markup=mainKeyboard)
 
 @dp.message(Command('sendAll'))
 async def sendAllHandler(message: types.Message):
