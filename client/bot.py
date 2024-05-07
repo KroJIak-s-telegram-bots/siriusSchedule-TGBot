@@ -139,7 +139,7 @@ def getResultTextWithSchedule(userInfo, group):
         eventText = f'<b>{event.title}</b>\n'
         eventText += f"{newStartTime.strftime('%H:%M')} — {newEndTime.strftime('%H:%M')}\n"
         eventText += f'Место: {event.address}\n\n'
-        if currentTime >= newStartTime: eventText = f'<s>{eventText}</s>'
+        if currentTime > newEndTime: eventText = f'<s>{eventText}</s>'
         eventTextList.append((event.startTime, eventText))
     sortedEventTextList = sorted(eventTextList, key=lambda x: x[0])
     sortedEventTextList = list(map(lambda x: x[1], sortedEventTextList))
